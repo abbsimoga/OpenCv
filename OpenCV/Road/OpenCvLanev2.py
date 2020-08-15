@@ -103,6 +103,28 @@ def steeringAnglev2(lines):
 
 roadCords = []
 
+def nothing(x):
+    pass
+
+cv2.namedWindow("trash")
+cv2.createTrackbar("lowT", "trash", 220, 255, nothing)
+cv2.createTrackbar("highT", "trash", 255, 255, nothing)
+
+while True:
+    img = ImageGrab.grab(bbox=(0, 0, 1920, 1080))
+    img_np = np.array(img)
+    videoFrame = cv2.cvtColor(img_np, cv2.COLOR_BGR2RGB)
+
+    lowT = cv2.getTrackbarPos("lowT","trash")
+    highT = cv2.getTrackbarPos("highT","trash")
+    
+    edgeDetectedFrame = edgeDetection(videoFrame, 3, lowT, highT)
+    cv2.imshow('edges', edgeDetectedFrame)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cv2.destroyAllWindows()
+
 while True:
     img = ImageGrab.grab(bbox=(0, 0, 1920, 1080))
     img_np = np.array(img)
@@ -113,10 +135,11 @@ while True:
         break
 
 cv2.destroyAllWindows()
-cords = [np.array([0,0,1,1,2,2]), np.array([0,0,1,1,2,2])]
 
 if len(roadCords) != 4:
     roadCords = [(1025, 650), (900, 650), (300,950), (1600,950)]
+
+cords = [np.array([roadCords[0][0],roadCords[0][1],roadCords[1][0],roadCords[1][1],(roadCords[0][0]+roadCords[1][0])/2,(roadCords[0][1]+roadCords[1][1])/2]), np.array([roadCords[2][0],roadCords[2][1],roadCords[3][0],roadCords[3][1],(roadCords[2][0]+roadCords[3][0])/2,(roadCords[2][1]+roadCords[3][1])/2])] # roadcords
 
 LANEFOLLOW_VERSION = True
 
@@ -136,7 +159,7 @@ while True:
 
     birdsEye = cv2.warpPerspective(videoFrame, M, (1920,1080), flags=cv2.WARP_FILL_OUTLIERS + cv2.INTER_CUBIC)
 
-    edgeDetectedFrame = edgeDetection(videoFrame, 3, 25, 75)
+    edgeDetectedFrame = edgeDetection(videoFrame, 3, lowT, highT)
     reducedFOVFrame = regionOfInterest(edgeDetectedFrame, *roadCords)
 
     lines = cv2.HoughLinesP(reducedFOVFrame, 2, np.pi/180, 100, np.array([]), minLineLength=15, maxLineGap=275)
